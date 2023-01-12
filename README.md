@@ -1,9 +1,15 @@
-# Inventory Dialog
+# Inventory Dialog with item stacking
 
 ![sampctl](https://shields.southcla.ws/badge/sampctl-inventory--dialog-2f2f2f.svg?style=for-the-badge)
 
-An extension for ScavengeSurvive/inventory that uses SA:MP dialog menus for
+A fork of an extension for ScavengeSurvive/inventory that uses SA:MP dialog menus for
 player interaction with their inventory items.
+If you want more control, it's recommended to use the upstream project.
+I keep this fork for my server where inventory items of the same type don't have any differences.
+
+Key changes:
+- Items of the same type are stacking.
+- When you select an item, the options are: Use, Information, Drop.
 
 ## Installation
 
