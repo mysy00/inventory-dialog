@@ -143,7 +143,21 @@ stock DisplayPlayerInventory(playerid) {
 		return 2;
 	}
 
-	new itemsize;
+	format(list, sizeof(list), "Item\tQuantity\n");
+
+	// A clone of the inventory to avoid duplicate items
+	new
+		Item:invitem_id[MAX_INVENTORY_SLOTS] = {
+        INVALID_ITEM_ID,
+        ...
+    },
+    ItemType:invitem_type[MAX_INVENTORY_SLOTS] = {
+        INVALID_ITEM_TYPE,
+        ...
+    },
+    invitem_duplicates[MAX_INVENTORY_SLOTS],
+    quantity;
+
 	for(new i; i < size; i++) {
 		ret_outer = GetInventorySlotItem(playerid, i, itemid);
 
@@ -151,20 +165,37 @@ stock DisplayPlayerInventory(playerid) {
 			break;
 		}
 
-		GetItemName(itemid, tmp);
+		new bool:isItemDuplicate;
 
-		GetItemTypeSize(GetItemType(itemid), itemsize);
-		format(list, sizeof(list), "%s[%02d]%s\n", list, itemsize, tmp);
+		for (new j; j < size; j++) {
+			if (invitem_type[j] == GetItemType(itemid)) {
+				invitem_duplicates[j]++;
+				isItemDuplicate = true;
+			}
+		}
+
+		if (!isItemDuplicate) {
+			invitem_id[i] = itemid;
+			invitem_type[i] = GetItemType(itemid);
+		}
+
 		inv_ItemListTotal[playerid]++;
+	}
+
+	for (new i; i < inv_ItemListTotal[playerid]; i++) {
+		if (invitem_type[i] == INVALID_ITEM_TYPE) {
+			continue;
+		}
+
+		quantity = 1 + invitem_duplicates[i];
+
+		GetItemName(invitem_id[i], tmp);
+
+		format(list, sizeof(list), "%s%s\t%2d\n", list, tmp, quantity);
 	}
 
 	new slots;
 	ret_outer = GetInventoryFreeSlots(playerid, slots);
-
-	for(new i; i < slots; i++) {
-		strcat(list, "<Empty>\n");
-		inv_ItemListTotal[playerid]++;
-	}
 
 	inv_ExtraItemList[playerid][0] = EOS;
 	inv_ExtraItemCount[playerid] = 0;
@@ -206,18 +237,22 @@ stock DisplayPlayerInventory(playerid) {
 
 		new
 			Item:itemid2,
+			slotid,
 			ret;
-		ret = GetInventorySlotItem(playerid, listitem, itemid2);
+		ret = GetInventorySlotItemByName(playerid, inputtext, itemid2, slotid);
+
+		GetItemName(itemid2, tmp);
+
 		if(ret || !IsValidItem(itemid2)) {
 			DisplayPlayerInventory(playerid);
 		} else {
-			inv_SelectedSlot[playerid] = listitem;
-			_inv_displaySlotOptions(playerid, listitem);
+			inv_SelectedSlot[playerid] = slotid;
+			_inv_displaySlotOptions(playerid, slotid);
 		}
 
 		return 0;
 	}
-	Dialog_ShowCallback(playerid, using inline Response, DIALOG_STYLE_LIST, title, list, "Options", "Close");
+	Dialog_ShowCallback(playerid, using inline Response, DIALOG_STYLE_TABLIST_HEADERS, title, list, "Options", "Close");
 
 	inv_ViewingInventory[playerid] = true;
 
@@ -359,7 +394,7 @@ _inv_displaySlotOptions(playerid, slotid) {
 	}
 
 	GetItemName(itemid, name);
-	inv_OptionsList[playerid] = "Equip\nUse\nDrop\n";
+	inv_OptionsList[playerid] = "Use\nInformation\nDrop\n";
 	inv_OptionsCount[playerid] = 0;
 
 	CallLocalFunction("OnPlayerViewInventoryOpt", "d", playerid);
@@ -393,7 +428,8 @@ _inv_displaySlotOptions(playerid, slotid) {
 
 					RemoveItemFromInventory(playerid, inv_SelectedSlot[playerid]);
 					GiveWorldItemToPlayer(playerid, itemid2, 1);
-					DisplayPlayerInventory(playerid);
+					PlayerUseItem(playerid);
+					ClosePlayerInventory(playerid, true);
 				} else {
 					ShowActionText(playerid, "You are already holding something", 3000, 200);
 					DisplayPlayerInventory(playerid);
@@ -411,10 +447,7 @@ _inv_displaySlotOptions(playerid, slotid) {
 						return 1;
 					}
 
-					RemoveItemFromInventory(playerid, inv_SelectedSlot[playerid]);
-					GiveWorldItemToPlayer(playerid, itemid2, 1);
-
-					PlayerUseItem(playerid);
+					ShowItemTip(playerid, itemid2);
 
 					ClosePlayerInventory(playerid, true);
 				} else {
