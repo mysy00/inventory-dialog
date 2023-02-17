@@ -182,12 +182,16 @@ stock DisplayPlayerInventory(playerid) {
 		inv_ItemListTotal[playerid]++;
 	}
 
-	for (new i; i < inv_ItemListTotal[playerid]; i++) {
+	for (new i, j = inv_ItemListTotal[playerid]; i < j; i++) {
 		if (invitem_type[i] == INVALID_ITEM_TYPE) {
 			continue;
 		}
 
 		quantity = 1 + invitem_duplicates[i];
+
+		if (quantity > 1) {
+			inv_ItemListTotal[playerid] -= quantity - 1;
+		}		
 
 		GetItemName(invitem_id[i], tmp);
 
@@ -230,7 +234,7 @@ stock DisplayPlayerInventory(playerid) {
 				DisplayPlayerInventory(playerid);
 			} else {
 				Logger_Dbg("inventory-dialog", "closing inventory via extra item response");
-				ClosePlayerInventory(playerid);
+				inv_ViewingInventory[playerid] = false;
 			}
 			return 1;
 		}
@@ -559,4 +563,3 @@ timer PlayerPutItemInInventory[300](playerid, itemid) {
 	AddItemToInventory(playerid, Item:itemid);
 	CallLocalFunction("OnPlayerAddedToInventory", "dd", playerid, itemid);
 }
-
