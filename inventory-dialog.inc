@@ -594,4 +594,3 @@ timer PlayerPutItemInInventory[300](playerid, itemid) {
 	AddItemToInventory(playerid, Item:itemid);
 	CallLocalFunction("OnPlayerAddedToInventory", "dd", playerid, itemid);
 }
-
