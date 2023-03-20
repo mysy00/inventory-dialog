@@ -182,12 +182,16 @@ stock DisplayPlayerInventory(playerid) {
 		inv_ItemListTotal[playerid]++;
 	}
 
-	for (new i; i < inv_ItemListTotal[playerid]; i++) {
+	for (new i, j = inv_ItemListTotal[playerid]; i < j; i++) {
 		if (invitem_type[i] == INVALID_ITEM_TYPE) {
 			continue;
 		}
 
 		quantity = 1 + invitem_duplicates[i];
+
+		if (quantity > 1) {
+			inv_ItemListTotal[playerid] -= quantity - 1;
+		}		
 
 		GetItemName(invitem_id[i], tmp);
 
@@ -230,7 +234,7 @@ stock DisplayPlayerInventory(playerid) {
 				DisplayPlayerInventory(playerid);
 			} else {
 				Logger_Dbg("inventory-dialog", "closing inventory via extra item response");
-				ClosePlayerInventory(playerid);
+				inv_ViewingInventory[playerid] = false;
 			}
 			return 1;
 		}
@@ -459,6 +463,8 @@ _inv_displaySlotOptions(playerid, slotid) {
 				if(GetPlayerItem(playerid) == INVALID_ITEM_ID) {
 					new
 						Item:itemid2,
+						ItemType:itemtype2,
+						itemcount2,
 						ret;
 					
 					ret = GetInventorySlotItem(playerid, inv_SelectedSlot[playerid], itemid2);
@@ -467,10 +473,39 @@ _inv_displaySlotOptions(playerid, slotid) {
 						return 1;
 					}
 
-					RemoveItemFromInventory(playerid, inv_SelectedSlot[playerid]);
-					GiveWorldItemToPlayer(playerid, itemid2, 1);
+					itemtype2 = GetItemType(itemid2);
+					itemcount2 = GetPlayerItemCount(playerid, itemtype2);
 
-					PlayerDropItem(playerid);
+					if (itemcount2 > 1) {
+						inline DropResponse(dropResponse, dropListitem, string:dropInputtext[]) {
+							#pragma unused dropListitem
+							if (!dropResponse) {
+								return 1;
+							}
+
+							if (!IsNumeric(dropInputtext)) {
+								return 1;
+							}
+
+							new itemsToDrop = strval(dropInputtext);
+
+							if (itemcount2 < itemsToDrop) {
+								return 1;
+							}
+
+							RemoveItemFromInventory(playerid, inv_SelectedSlot[playerid]);
+							GiveWorldItemToPlayer(playerid, itemid2, 1);
+							PlayerDropItem(playerid);
+							// so we apply the animation only once and just remove other items
+							RemoveItemsFromInventory(playerid, itemtype2, itemsToDrop - 1);
+							GivePlayerItem(playerid, itemtype2, itemsToDrop - 1, .floor = true);
+						}
+						Dialog_ShowCallback(playerid, using inline DropResponse, DIALOG_STYLE_INPUT, "Drop", "How many to drop?", "Drop", "Cancel");
+					} else {
+						RemoveItemFromInventory(playerid, inv_SelectedSlot[playerid]);
+						GiveWorldItemToPlayer(playerid, itemid2, 1);
+						PlayerDropItem(playerid);
+					}
 
 					ClosePlayerInventory(playerid, true);
 				} else {

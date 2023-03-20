@@ -2,10 +2,10 @@
 
 ![sampctl](https://shields.southcla.ws/badge/sampctl-inventory--dialog-2f2f2f.svg?style=for-the-badge)
 
-A fork of an extension for ScavengeSurvive/inventory that uses SA:MP dialog menus for
+A fork of an extension for ScavengeSurvive/inventory-dialog that uses SA:MP dialog menus for
 player interaction with their inventory items.
 If you want more control, it's recommended to use the upstream project.
-I keep this fork for my server where inventory items of the same type don't have any differences.
+I keep this fork for my server where inventory items of the same type don't have any differences. It (probably) will be rewritten to use textdraws some day.
 
 Key changes:
 - Items of the same type are stacking.
